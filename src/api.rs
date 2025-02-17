@@ -19,6 +19,11 @@ pub enum SignError {
   Verify,
 }
 
+pub enum RestoreError {
+  PublicKeyLen,
+  SecretKeyLen,
+}
+
 impl Keypair {
   /// Explicitly expose secret key
   /// ```
@@ -45,6 +50,30 @@ impl Keypair {
     let mut secret = [0u8; SECRETKEYBYTES];
     crypto_sign_keypair(&mut public, &mut secret, None);
     Keypair { public, secret }
+  }
+  
+  /// Restores a keypair from public and secret key
+  /// 
+  /// Example:
+  /// ```
+  /// # use pqc_dilithium::*;
+  /// let (public, secret) = get_keys_from_db(&mut conn).await?;
+  /// let keys = Keypair::restore(public, secret)?;
+  /// ```
+  pub fn restore(public: &[u8], secret: &[u8]) -> Result<Keypair, RestoreError> {
+    if public.len() != PUBLICKEYBYTES {
+      return Err(RestoreError::PublicKeyLen)
+    }
+    if secret.len() != SECRETKEYBYTES {
+      return Err(RestoreError::SecretKeyLen)
+    }
+    
+    let mut _public = [0u8; PUBLICKEYBYTES];
+    let mut _secret = [0u8; SECRETKEYBYTES];
+    _public[..PUBLICKEYBYTES].copy_from_slice(public);
+    _secret[..SECRETKEYBYTES].copy_from_slice(secret);
+    
+    Ok(Keypair { public: _public, secret: _secret })
   }
 
   /// Generates a signature for the given message using a keypair
